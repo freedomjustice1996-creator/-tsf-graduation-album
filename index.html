@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d1118">
+<title>卒業アルバムに、俺がいない。- Chapter 1–3</title>
+<style>
+:root{
+  --bg:#0d1118;--panel:#171d27;--panel2:#202836;--line:#2f3948;
+  --text:#f2f5f9;--muted:#aab4c2;--accent:#e6edf7;--blue:#8db8ff;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Yu Gothic UI","Meiryo",sans-serif}
+body{min-height:100vh}
+#app{max-width:860px;margin:0 auto;padding:12px 10px 40px}
+button{font:inherit;cursor:pointer}
+.top{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:12px}
+.title{font-weight:700;letter-spacing:.03em}
+.small{font-size:.82rem;color:var(--muted)}
+.card{background:linear-gradient(180deg,var(--panel),#11161e);border:1px solid var(--line);border-radius:18px;padding:15px;box-shadow:0 12px 28px rgba(0,0,0,.2)}
+h1,h2,h3{margin:.2em 0 .55em}
+p{line-height:1.9;margin:.55em 0}
+.actions{display:grid;gap:10px;margin-top:16px}
+button{border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:12px 14px;border-radius:14px;text-align:left}
+button.primary{background:linear-gradient(180deg,#f1f5fb,#d7e2f3);color:#10151c;border:none;font-weight:700;text-align:center}
+button.ghost{text-align:center;background:transparent}
+.photo{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--line);margin:12px 0 14px;background:#10141b}
+.photo svg{display:block;width:100%;height:auto}
+.photo .cap{position:absolute;left:10px;right:10px;bottom:10px;background:rgba(4,8,12,.62);backdrop-filter:blur(8px);padding:10px 12px;border-radius:12px}
+.dialog{display:grid;gap:10px;margin-top:12px}
+.box{border:1px solid var(--line);border-radius:14px;padding:12px;background:#151c26;line-height:1.85}
+.box.narr{background:#121821}
+.who{font-size:.8rem;color:#bcc7d5;margin-bottom:4px}
+.progress{height:8px;background:#242c38;border-radius:999px;overflow:hidden;margin:10px 0 14px}
+.progress>div{height:100%;background:linear-gradient(90deg,#e4ebf6,#8eb9ff)}
+.album{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px}
+.album .item{border:1px solid var(--line);border-radius:14px;padding:9px;background:#111720}
+.album .lock{opacity:.35}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.72);display:flex;align-items:flex-end;justify-content:center;padding:10px;z-index:20}
+.sheet{width:min(900px,100%);max-height:90vh;overflow:auto;background:#10151c;border:1px solid var(--line);border-radius:20px 20px 14px 14px;padding:14px}
+.tagrow{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+.tag{font-size:.72rem;border:1px solid #465364;padding:4px 8px;border-radius:999px;color:#d7e0ec}
+.flash{animation:flash .5s ease}
+@keyframes flash{0%{filter:brightness(3)}100%{filter:brightness(1)}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const CH=[
+{
+ no:1,title:"放課後の公園",age:"小学5年",
+ intro:[
+  "友人から送られてきた、古い写真。",
+  "夕方の公園。蓮、奈々、直樹、美咲。そして、自分。",
+  "画面を指でなぞった瞬間、写真の奥から風の音が戻ってくる。"
+ ],
+ scene:"ランドセルをベンチへ置く。夕日の色、砂埃、ボールが地面を叩く音。全部、妙に鮮明だ。",
+ art:"park",
+ qs:[
+  {prompt:"放課後、誰の流れに乗る？",pre:"蓮はボールを持って手招きし、奈々はコンビニの新作アイスの話をしている。直樹は小さなデジカメをいじり、美咲はベンチに座っている。",
+   choices:[
+    {t:"蓮について走って遊ぶ",who:"蓮",r:"ボールを追って走り回るうちに、考えるより先に体が動く。くだらない競争でも、勝つと少しうれしい。",line:"蓮「お前、こういう時だけ速いんだよな」",d:{social:3,active:3},tag:"蓮"},
+    {t:"奈々とコンビニへ行く",who:"奈々",r:"並んで歩きながら、教室であったどうでもいい話をする。寄り道そのものが、少しだけ特別に感じる。",line:"奈々「こういうの、卒業しても覚えてそう」",d:{social:3,emotion:2},tag:"奈々"},
+    {t:"直樹のカメラを見せてもらう",who:"直樹",r:"液晶の中では、公園が少しだけ違って見える。『残る』ということを、初めて意識した気がした。",line:"直樹「写真って、あとで思い出せるからいいんだよ」",d:{photo:6,reflect:2},tag:"直樹"},
+    {t:"美咲の隣に座る",who:"美咲",r:"遊びの輪から少しだけ離れると、みんなの声が遠くなる。静かな時間が意外と嫌いじゃない。",line:"美咲「神谷って、こういう時間好きでしょ」",d:{emotion:4,reflect:3},tag:"美咲"}
+   ]},
+  {prompt:"最後に一枚、写真を撮ることになった。どうする？",pre:"直樹がセルフタイマーをセットする。みんなが適当に並び始める。",
+   choices:[
+    {t:"みんなを中央へ呼ぶ",who:"みんな",r:"思ったより自然に声が出る。端にいた人も集まってきて、写真の中心に自分がいるような感覚が残った。",line:"直樹「神谷、そこ。ちょうど真ん中」",d:{initiative:4,social:2},tag:"中心"},
+    {t:"空いている場所へ入る",who:"自分",r:"目立とうとはしない。でも、自分の居場所が一つあることには妙な安心がある。",line:"奈々「そこ空いてるよ」",d:{stable:2},tag:"自然体"},
+    {t:"蓮と同じふざけたポーズをする",who:"蓮",r:"まともに並ぶのが照れくさくて、蓮の真似をする。あとで見返すと、きっと笑ってしまうような一枚だ。",line:"蓮「それ俺の真似だろ！」",d:{active:2,stable:1},tag:"悪ふざけ"},
+    {t:"カメラ位置を確認してから入る",who:"直樹",r:"全員が入っているか、背景に夕日が残っているか。ほんの少しだけ気になる。",line:"直樹「細かいな。でも、その方がいい写真になる」",d:{photo:4,present:2},tag:"写真"}
+   ]}
+ ]
+},
+{
+ no:2,title:"卒業遠足",age:"小学6年",
+ intro:[
+  "二枚目は、水族館の卒業遠足。",
+  "写真の中の自分はまだ子どもっぽい。けれど、持っている土産袋や、隣にいる相手まで妙に『自分らしい』。",
+  "写真に触れると、青い水槽の光が視界いっぱいに広がった。"
+ ],
+ scene:"水槽の青い光が顔に映る。班行動の自由時間。みんなが行きたい場所を口々に言っている。",
+ art:"aquarium",
+ qs:[
+  {prompt:"次にどこへ行くか、どう決める？",pre:"クラゲ館へ行きたい人、お土産を先に見たい人。意見はきれいに分かれている。",
+   choices:[
+    {t:"集合時間から逆算する",who:"班",r:"地図と時計を見ながら順番を決めると、意外とみんな素直についてくる。必要な時だけ前へ出る感覚が少し残る。",line:"沙耶「それなら全部回れそう」",d:{initiative:3,caution:3},tag:"計画"},
+    {t:"一度二組に分かれる",who:"班",r:"無理に全員を一つにしない。別れてもあとで合流できる、その距離感が楽だった。",line:"奈々「じゃあ後で入口前ね」",d:{stable:2,initiative:2},tag:"柔軟"},
+    {t:"一番行きたい人に合わせる",who:"友達",r:"自分の希望より、誰かが楽しそうにしている方を選ぶ。その人のテンションごと記憶に残る。",line:"美咲「じゃあクラゲ、行こっか」",d:{emotion:2,social:2},tag:"同行"},
+    {t:"全部詰め込んで回る",who:"自分",r:"少し欲張る。忙しいけれど、見たいものを諦めない感じが自分には合っていた。",line:"蓮「お前、意外と欲張りだな」",d:{active:3,reflect:1},tag:"欲張り"}
+   ]},
+  {prompt:"土産店で、何を持ち帰る？",pre:"棚にはキーホルダー、ストラップ、マグネット。班の誰かが『お揃いもよくない？』と言う。",
+   choices:[
+    {t:"自分用に一つ買う",who:"自分",r:"手のひらサイズの土産に、その日の景色を閉じ込めるような気がした。",line:"美咲「それ、神谷っぽいかも」",d:{collect:5,stable:1},tag:"自分用"},
+    {t:"家族への土産を探す",who:"家族",r:"帰ってから渡す相手を考えると、遠足が自分一人の思い出ではなくなる。",line:"店の袋を持った瞬間、帰宅後の会話まで想像する。",d:{emotion:2,caution:2},tag:"家族"},
+    {t:"みんなと同じシリーズを選ぶ",who:"友達",r:"お揃いのものを持つだけで、班の空気が少しだけ続くように思えた。",line:"奈々「じゃあ色だけ変えようよ」",d:{social:3,collect:3},tag:"お揃い"},
+    {t:"何も買わない",who:"自分",r:"物がなくても、記憶は残る。そう思って店を出る。でも少しだけ、何か形にすればよかったかも、とも思う。",line:"蓮「マジで何も買わないの？」",d:{reflect:3},tag:"記憶だけ"}
+   ]}
+ ]
+},
+{
+ no:3,title:"新しいクラス",age:"中学1年",
+ intro:[
+  "三枚目。中学の新しい教室。",
+  "制服も机も、まだ少し自分のものになりきっていない。",
+  "この頃から、写真の中の自分には『どう見られているか』という気配が混ざり始める。"
+ ],
+ scene:"放課後の教室。陽介たちは机を寄せて騒ぎ、玲央は鞄の小物をいじっている。葵はプリントを整理し、美咲は窓際にいる。",
+ art:"classroom",
+ qs:[
+  {prompt:"放課後、どこに残る？",pre:"帰ってもいい。でも、もう少しここにいてもいい。そんな曖昧な時間。",
+   choices:[
+    {t:"陽介たちの輪に入る",who:"陽介",r:"笑いの速さに乗って話すうちに、少しだけ自分のテンポも変わる。",line:"陽介「神谷もこっち来いよ」",d:{social:5},tag:"陽介"},
+    {t:"玲央の小物を見る",who:"玲央",r:"色や形の話をしているだけなのに、『似合う』『好き』という言葉が妙に残る。",line:"玲央「お前、こういうの似合いそう」",d:{appearance:5,present:3},tag:"玲央"},
+    {t:"美咲と少し話す",who:"美咲",r:"にぎやかな教室の端で、声を落として話す。こういう静かなやり取りが、自分の輪郭を保ってくれる。",line:"美咲「新しいクラスって疲れるよね」",d:{emotion:4,reflect:2},tag:"美咲"},
+    {t:"葵と連絡先を交換する",who:"葵",r:"短いやり取りなのに、その後の生活を少しだけ変える予感がした。",line:"葵「また明日も話そ」",d:{aoi:8,emotion:2},tag:"葵"}
+   ]},
+  {prompt:"『少し髪伸ばしても似合いそう』と言われた。どう返す？",pre:"軽い一言のはずなのに、帰り道まで妙に頭に残る。",
+   choices:[
+    {t:"少し伸ばしてみてもいい",who:"自分",r:"その日の夜、鏡を見る時間がほんの少し長くなる。『似合うかどうか』を考えること自体が新しい。",line:"玲央「ほら、気にしてるじゃん」",d:{appearance:5,body:3,present:2},tag:"髪"},
+    {t:"どうしてそう思うのか聞く",who:"玲央",r:"理由を聞くと、相手の目に映っている自分が少し具体的になる。",line:"玲央「顔の雰囲気。あと目元かな」",d:{appearance:4,reflect:3},tag:"見られ方"},
+    {t:"今のままでいいと言う",who:"自分",r:"変化を急がない。まだ決めきれないものを、そのまま保留にしておく。",line:"美咲「急に変えなくてもいいよね」",d:{stable:3,caution:2},tag:"保留"},
+    {t:"笑って流す",who:"自分",r:"気にしていないふりをする。でも家に帰って鏡を見ると、昼間の言葉だけが残っている。",line:"（……似合う、ってどんな感じなんだろう）",d:{reflect:4},tag:"余韻"}
+   ]}
+ ]
+}
+];
+
+function fresh(){
+ return {chapter:0,q:-1,result:false,last:null,lastQ:null,album:[],
+ social:10,active:10,emotion:10,photo:8,reflect:10,initiative:10,caution:10,stable:12,
+ collect:5,appearance:8,present:8,body:10,aoi:0,currentName:"神谷 悠斗"};
+}
+let S=load()||fresh();
+function save(){localStorage.setItem("tsf_album_ch1_3_v1",JSON.stringify(S))}
+function load(){try{return JSON.parse(localStorage.getItem("tsf_album_ch1_3_v1")||"null")}catch(e){return null}}
+function clamp(v){return Math.max(0,Math.min(100,v))}
+function upd(){
+ const score=S.body*.35+S.appearance*.25+S.present*.15+S.aoi*.05+S.reflect*.05;
+ S.currentName=score<26?"神谷 悠斗":score<43?"神谷 ゆう":"神谷 悠香";
+}
+function artSVG(ch,subtitle){
+ const colors={park:["#6faee8","#355674"],aquarium:["#4ac5d7","#284f74"],classroom:["#f1c47f","#7c5d37"]}[ch.art];
+ const scene={
+ park:`<circle cx="105" cy="85" r="30" fill="#fff" opacity=".13"/><rect x="96" y="115" width="18" height="62" fill="#fff" opacity=".12"/><path d="M250 185 Q300 85 350 185" fill="none" stroke="#fff" opacity=".15" stroke-width="12"/>`,
+ aquarium:`<ellipse cx="320" cy="110" rx="120" ry="70" fill="#fff" opacity=".09"/><circle cx="250" cy="92" r="5" fill="#fff" opacity=".55"/><circle cx="275" cy="76" r="4" fill="#fff" opacity=".4"/><circle cx="300" cy="105" r="6" fill="#fff" opacity=".35"/>`,
+ classroom:`<rect x="65" y="60" width="145" height="95" rx="8" fill="#fff" opacity=".10"/><rect x="235" y="70" width="150" height="82" rx="8" fill="#fff" opacity=".08"/><rect x="95" y="178" width="95" height="20" fill="#fff" opacity=".12"/><rect x="220" y="178" width="95" height="20" fill="#fff" opacity=".12"/>`
+ }[ch.art];
+ const esc=s=>(s||"").replace(/[<>&'"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;',"'":'&apos;','"':'&quot;'}[c]));
+ return `<svg viewBox="0 0 480 300" xmlns="http://www.w3.org/2000/svg">
+ <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${colors[0]}"/><stop offset="1" stop-color="${colors[1]}"/></linearGradient></defs>
+ <rect width="480" height="300" fill="url(#g)"/>
+ <rect x="20" y="20" width="440" height="260" rx="18" fill="#000" opacity=".08"/>
+ ${scene}
+ <rect x="30" y="218" width="420" height="52" rx="12" fill="#000" opacity=".35"/>
+ <text x="46" y="242" fill="#fff" font-size="24" font-weight="700" font-family="Arial">${String(ch.no).padStart(2,"0")} ${esc(ch.title)}</text>
+ <text x="46" y="261" fill="#f4f6fb" font-size="13" font-family="Arial">${esc(subtitle||"")}</text>
+ </svg>`;
+}
+function topTags(){const a=[["写真",S.photo],["内省",S.reflect],["社交",S.social],["外見意識",S.appearance],["主体性",S.initiative],["感情",S.emotion]];return a.sort((x,y)=>y[1]-x[1]).slice(0,3).map(x=>x[0])}
+function photoHTML(ch,sub){
+ return `<div class="photo">${artSVG(ch,sub)}<div class="cap"><b>${S.currentName}</b><br><span class="small">${sub}</span><div class="tagrow">${topTags().map(x=>`<span class="tag">${x}</span>`).join("")}</div></div></div>`;
+}
+function home(){
+ upd();save();
+ const started=S.q!==-1||S.album.length>0||S.chapter>0;
+ document.getElementById("app").innerHTML=`
+ <div class="top"><div class="title">卒業アルバムに、俺がいない。</div><div class="small">Chapter 1–3 完全版サンプル</div></div>
+ <div class="card">
+ <h1>卒業アルバムに、俺がいない。</h1>
+ <p>昔の写真に触れると、その写真が撮られる少し前の記憶へ入る。</p>
+ <p>今回は第1〜3章を、会話・地の文・選択後の反応・写真演出まで入れて作り直したテスト版です。</p>
+ <div class="actions">
+ ${started?`<button class="primary" onclick="resume()">つづきから</button>`:""}
+ <button class="${started?"ghost":"primary"}" onclick="start()">最初から</button>
+ <button onclick="album()">アルバム</button>
+ </div></div>`;
+}
+function start(){S=fresh();save();intro()}
+function resume(){S.result?result():S.q===-1?intro():question()}
+function ch(){return CH[S.chapter]}
+function intro(){
+ upd();const c=ch();
+ document.getElementById("app").innerHTML=`
+ <div class="top"><div><div class="title">写真 No.${String(c.no).padStart(2,"0")}</div><div class="small">${c.age}</div></div><button onclick="album()">アルバム</button></div>
+ <div class="card">
+ <h2>${c.title}</h2>
+ ${photoHTML(c,c.intro[1])}
+ <div class="dialog">
+ ${c.intro.map(x=>`<div class="box narr">${x}</div>`).join("")}
+ <div class="box"><div class="who">${S.currentName}</div>「……思い出せる。」</div>
+ </div>
+ <div class="actions"><button class="primary" onclick="begin()">記憶へ入る</button><button class="ghost" onclick="home()">メニュー</button></div>
+ </div>`;
+}
+function begin(){S.q=0;S.result=false;save();question()}
+function question(){
+ upd();const c=ch(),q=c.qs[S.q];
+ document.getElementById("app").innerHTML=`
+ <div class="top"><div><div class="title">${c.title}</div><div class="small">選択 ${S.q+1}/${c.qs.length}</div></div><button onclick="album()">アルバム</button></div>
+ <div class="progress"><div style="width:${((S.q+1)/c.qs.length)*100}%"></div></div>
+ <div class="card">
+ ${photoHTML(c,q.pre)}
+ <div class="dialog">
+ <div class="box narr">${c.scene}</div>
+ <div class="box narr">${q.pre}</div>
+ </div>
+ <h3>${q.prompt}</h3>
+ <div class="actions">${q.choices.map((x,i)=>`<button onclick="choose(${i})">${x.t}</button>`).join("")}</div>
+ </div>`;
+}
+function choose(i){
+ const c=ch().qs[S.q].choices[i];S.last=c;S.lastQ=ch().qs[S.q];
+ Object.entries(c.d||{}).forEach(([k,v])=>S[k]=clamp((S[k]||0)+v));
+ S.result=true;upd();save();result()
+}
+function result(){
+ upd();const c=ch(),x=S.last;
+ document.getElementById("app").innerHTML=`
+ <div class="top"><div class="title">${c.title}</div><div class="small">選択結果</div></div>
+ <div class="card flash">
+ <div class="dialog">
+ <div class="box narr">${x.r}</div>
+ <div class="box"><div class="who">${x.who}</div>${x.line}</div>
+ <div class="box narr">この出来事は、あとで写真を見返した時にも『昔からそうだった』記憶として自然に残っていく。</div>
+ </div>
+ <div class="actions"><button class="primary" onclick="next()">つづける</button></div>
+ </div>`;
+}
+function next(){
+ S.result=false;
+ if(S.q<ch().qs.length-1){S.q++;save();question()}else finish()
+}
+function finish(){
+ upd();const c=ch();
+ const cap=`${S.currentName} / ${topTags().join("・")} / ${S.body<22?"まだ大きな外見変化はない":S.body<35?"少し中性的な印象が増えている":"外見の変化が目立ち始めている"}`;
+ const entry={no:c.no,title:c.title,cap,svg:artSVG(c,cap),name:S.currentName};
+ const k=S.album.findIndex(a=>a.no===c.no);if(k>=0)S.album[k]=entry;else S.album.push(entry);
+ save();
+ document.getElementById("app").innerHTML=`
+ <div class="card">
+ <div class="small">CHAPTER CLEAR</div><h2>${c.title}</h2>
+ <div class="photo">${entry.svg}<div class="cap"><b>${entry.name}</b><br><span class="small">${entry.cap}</span></div></div>
+ <div class="dialog">
+ <div class="box narr">白いフラッシュのあと、意識が現在へ戻る。</div>
+ <div class="box"><div class="who">${S.currentName}</div>「……懐かしいな。」</div>
+ <div class="box narr">写真は変わっている。けれど本人には、これが昔からの自分の記憶だ。</div>
+ </div>
+ <div class="actions"><button class="primary" onclick="advance()">${c.no===3?"テスト版を完了":"次の写真へ"}</button><button onclick="album()">アルバムを見る</button></div>
+ </div>`;
+}
+function advance(){
+ if(S.chapter>=2){S.q=-1;save();ending();return}
+ S.chapter++;S.q=-1;S.result=false;save();intro()
+}
+function ending(){
+ upd();
+ document.getElementById("app").innerHTML=`
+ <div class="card">
+ <div class="small">Chapter 1–3 COMPLETE</div>
+ <h1>ここまでの人生</h1>
+ <p>第1〜3章の選択が、写真・人間関係・外見意識・自己表現として少しずつ積み上がりました。</p>
+ <p class="box narr">現在名：<b>${S.currentName}</b><br>強く残った傾向：${topTags().join("・")}</p>
+ <p>このテンポと見せ方を基準に、第4章以降を伸ばしていく想定です。</p>
+ <div class="actions"><button class="primary" onclick="album()">アルバムを見る</button><button onclick="home()">タイトルへ</button></div>
+ </div>`;
+}
+function album(){
+ const cards=CH.map(c=>{
+  const a=S.album.find(x=>x.no===c.no);
+  return a?`<div class="item">${a.svg}<b>${String(c.no).padStart(2,"0")} ${c.title}</b><div class="small">${a.name}</div><div class="small">${a.cap}</div></div>`:
+  `<div class="item lock">${artSVG(c,"未取得")}<b>${String(c.no).padStart(2,"0")} ${c.title}</b><div class="small">未取得</div></div>`
+ }).join("");
+ document.body.insertAdjacentHTML("beforeend",`<div class="modal" id="m" onclick="if(event.target===this)this.remove()"><div class="sheet"><div class="top"><div><div class="title">アルバム</div><div class="small">${S.album.length}/3</div></div><button onclick="m.remove()">閉じる</button></div><div class="album">${cards}</div></div></div>`)
+}
+home();
+</script>
+</body>
+</html>
