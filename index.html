@@ -1,0 +1,771 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="卒業アルバム">
+<meta name="theme-color" content="#0d0f14">
+<link rel="manifest" href="manifest.webmanifest">
+<title>卒業アルバムに、俺がいない。</title>
+<style>
+:root{
+  --bg:#0d0f14; --panel:#171a22; --panel2:#202530; --text:#f3f4f6;
+  --muted:#a8afbd; --accent:#cfd6e6; --line:#2d3442; --danger:#d8a2a2;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Yu Gothic UI","Meiryo",sans-serif}
+body{min-height:100vh}
+button{font:inherit}
+#app{max-width:900px;margin:0 auto;padding:18px 14px 48px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.title{font-weight:700;letter-spacing:.04em}
+.small{font-size:.82rem;color:var(--muted)}
+.card{background:linear-gradient(180deg,var(--panel),#12151c);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.22)}
+.hero{padding:28px 20px}
+h1,h2,h3{margin:.2em 0 .6em}
+p{line-height:1.9;margin:.55em 0}
+button{border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:13px 14px;border-radius:14px;cursor:pointer}
+button:hover{filter:brightness(1.08)}
+button.primary{background:#e8ecf5;color:#11151c;border:none;font-weight:700}
+button.ghost{background:transparent}
+.actions{display:grid;gap:10px;margin-top:18px}
+.choice{width:100%;text-align:left;line-height:1.5}
+.quote{border-left:3px solid #596275;padding-left:12px;color:#e7eaf0}
+.scene-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px}
+.progress{height:8px;background:#252b37;border-radius:999px;overflow:hidden;margin:10px 0 18px}
+.progress>div{height:100%;background:#cfd6e6;width:0}
+.photo{min-height:230px;border-radius:16px;border:1px solid var(--line);background:
+ radial-gradient(circle at 75% 22%,rgba(255,255,255,.12),transparent 25%),
+ linear-gradient(135deg,#232936,#12151b 55%,#1b202a);display:flex;align-items:flex-end;padding:18px;margin:12px 0}
+.photo .caption{background:rgba(5,7,10,.68);backdrop-filter:blur(8px);padding:11px 12px;border-radius:12px;width:100%;font-size:.92rem}
+.tagrow{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.tag{font-size:.72rem;color:#cbd1dc;border:1px solid #3b4353;border-radius:999px;padding:5px 8px}
+.nav{display:flex;gap:8px;flex-wrap:wrap}
+.hidden{display:none!important}
+.album-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.album-item{background:#131720;border:1px solid var(--line);border-radius:14px;padding:12px;min-height:126px}
+.album-item b{display:block;margin-bottom:8px}
+.lock{opacity:.35}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.68);display:flex;align-items:flex-end;justify-content:center;padding:14px;z-index:20}
+.modal>.sheet{width:min(900px,100%);max-height:88vh;overflow:auto;background:#11151c;border:1px solid var(--line);border-radius:20px 20px 14px 14px;padding:18px}
+.statbar{display:grid;grid-template-columns:130px 1fr 40px;gap:8px;align-items:center;margin:8px 0}
+.statbar .bar{height:8px;border-radius:99px;background:#242a34;overflow:hidden}
+.statbar .bar i{display:block;height:100%;background:#c9d0dc}
+hr{border:0;border-top:1px solid var(--line);margin:18px 0}
+.end-title{font-size:1.7rem}
+.footer-note{margin-top:16px;font-size:.78rem;color:var(--muted)}
+@media (max-width:600px){
+  #app{padding:12px 10px 36px}
+  .card{padding:15px}
+  .hero{padding:22px 16px}
+  .statbar{grid-template-columns:110px 1fr 34px}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+const CHAPTERS = [
+ {no:1,title:"放課後の公園",age:"小学5年",memory:"公園で遊んでいた放課後。最初の写真は、まだ大きな変化を起こさない。けれど誰と何をしたかは、この先の人生へ残っていく。", choices:[
+  q("放課後、どうする？",[
+   c("蓮について走って遊ぶ",{sociability:3,adventure:2},["p01_played_with_ren"],{ren:[4,1,4,0]}),
+   c("奈々とコンビニへ行く",{sociability:3,conformity:1},["p01_went_with_nana"],{nana:[4,1,3,0]}),
+   c("直樹のカメラを見せてもらう",{hobby_photo:6,caution:1},["p01_checked_naoki_camera"],{naoki:[3,2,3,0]}),
+   c("美咲にもう少し残ろうと声をかける",{emotional_openness:2,initiative:2},["p01_asked_misaki_to_stay"],{misaki:[4,3,4,0]})
+  ]),
+  q("セルフタイマーの直前。",[
+   c("みんなを中央へ呼ぶ",{initiative:4,sociability:2},["p01_arranged_group_photo"]),
+   c("空いている場所へ入る",{caution:1},[]),
+   c("蓮と同じふざけたポーズをする",{adventure:3},["p01_copied_ren_pose"],{ren:[2,0,3,0]}),
+   c("直樹とカメラを確認してから飛び込む",{hobby_photo:4,self_presentation:2},["p01_checked_camera_before_photo"],{naoki:[2,2,2,0]})
+  ])
+ ]},
+ {no:2,title:"卒業遠足",age:"小学6年",memory:"水族館の卒業遠足。何を優先し、何を持ち帰るか。その小さな選択が、何年も後の持ち物や習慣へ残っていく。",choices:[
+  q("次の場所をどう回る？",[
+   c("集合時間から逆算する",{caution:4,initiative:2},["p02_led_group_by_schedule"]),
+   c("一度二組に分かれる",{initiative:3,sociability:2},["p02_suggested_split_group"]),
+   c("一番行きたい人に合わせる",{conformity:3,emotional_openness:1},["p02_followed_someone_choice"]),
+   c("残りを全部回る",{adventure:3,initiative:2},["p02_tried_to_visit_everywhere"])
+  ]),
+  q("土産店で何をする？",[
+   c("自分用に一つ買う",{hobby_collecting:5},["p02_bought_self_souvenir"]),
+   c("家族への土産を探す",{emotional_openness:1,caution:2},["p02_bought_family_gift"]),
+   c("みんなと同じシリーズを選ぶ",{conformity:3,hobby_collecting:3},["p02_bought_matching_item"]),
+   c("何も買わず見るだけにする",{caution:2},["p02_bought_nothing"])
+  ]),
+  q("集合写真の直前。",[
+   c("呼ばれた場所へ行く",{conformity:2},[]),
+   c("自分で空いている場所を選ぶ",{initiative:2},[]),
+   c("遅れている人を呼ぶ",{sociability:2,emotional_openness:2},["p02_called_late_person"]),
+   c("全員入るか確認する",{hobby_photo:3,caution:2},[])
+  ])
+ ]},
+ {no:3,title:"新しいクラス",age:"中学1年",memory:"新しい教室。友人関係だけでなく、髪や服、写真の写り方といった『自分の見え方』を意識し始める。",choices:[
+  q("放課後、どこに残る？",[
+   c("陽介たちの輪に入る",{sociability:5},["p03_joined_yosuke_circle"],{yosuke:[5,1,4,0]}),
+   c("玲央の小物を見る",{hobby_fashion:4,appearance_interest:3},["p03_talked_with_reo_about_style"],{reo:[4,2,4,0]}),
+   c("沙耶のクラス作業を手伝う",{initiative:2,caution:3},["p03_helped_saya_group"],{saya:[4,3,3,0]}),
+   c("葵と連絡先を交換する",{initiative:3,sociability:2},["p03_contacted_aoi_directly"],{aoi:[5,2,3,5]}),
+   c("蓮と帰る",{conformity:1},["p03_went_home_with_ren"],{ren:[3,1,5,0]})
+  ]),
+  q("髪について『少し伸ばしても似合いそう』と言われた。",[
+   c("手入れが面倒そう",{appearance_interest:-1},[]),
+   c("少し伸ばしてみてもいい",{appearance_interest:4,adventure:2,growth_hair_skin:2},["p03_considered_growing_hair"]),
+   c("どうしてそう思うのか聞く",{appearance_interest:3,caution:2},["p03_asked_why_hair_would_suit"]),
+   c("今のままでいい",{initiative:2},["p03_kept_same_hair"])
+  ]),
+  q("クラス写真では？",[
+   c("一番近い人の横に入る",{conformity:2},[]),
+   c("自分で場所を選ぶ",{initiative:2},[]),
+   c("まだ入っていない人を呼ぶ",{sociability:2},[]),
+   c("撮影位置を確認する",{hobby_photo:3,self_presentation:2},[])
+  ])
+ ]},
+ {no:4,title:"好きかもしれない",age:"中学1年・冬",memory:"初めて、葵を特別に意識する。恋愛そのものではなく、誰に何を話し、どう感情を扱うかが主人公を変えていく。",choices:[
+  q("放課後。",[
+   c("葵たちと本屋へ行く",{sociability:2},["p04_spent_time_with_aoi"],{aoi:[5,2,4,5]}),
+   c("蓮たちとコンビニへ行く",{sociability:2},["p04_spent_time_with_ren_group"],{ren:[3,1,4,0]}),
+   c("みんなで行ける場所を提案する",{initiative:3,sociability:3},["p04_kept_group_together"]),
+   c("今日は早めに帰る",{caution:2},["p04_went_home_early"])
+  ]),
+  q("『葵のこと気になってる？』と聞かれた。",[
+   c("気のせいだと言う",{emotional_openness:-2},["p04_denied_feelings"]),
+   c("そう見える？と聞く",{caution:2,emotional_openness:1},["p04_asked_how_it_looked"]),
+   c("少し気になるかもと認める",{emotional_openness:5},["p04_admitted_interest_in_aoi"],{aoi:[0,0,0,6]}),
+   c("名前を出さず相談する",{emotional_openness:3,caution:2},["p04_asked_indirectly_for_advice"])
+  ]),
+  q("駅で写真を撮る。",[
+   c("さっき話していた人の隣へ",{conformity:1},[]),
+   c("呼ばれた場所へ",{conformity:2},[]),
+   c("寒そうな人にカイロを渡す",{emotional_openness:2},[]),
+   c("タイマーを確認する",{hobby_photo:2},[])
+  ])
+ ]},
+ {no:5,title:"二人で出かけた日",age:"中学2年",memory:"葵との外出。服、写真、距離感。ここから身体の成長履歴と自己表現が目に見える形で重なり始める。",choices:[
+  q("出かける前、服をどうする？",[
+   c("いつもの服で行く",{initiative:1},["p05_used_usual_clothes"]),
+   c("鏡を見ながら決める",{appearance_interest:4,self_presentation:3},["p05_chose_clothes_in_mirror"]),
+   c("以前すすめられた服を使う",{conformity:2,appearance_interest:3},["p05_used_friend_recommendation"]),
+   c("写真に撮って比べる",{hobby_photo:3,self_presentation:5},["p05_compared_outfit_with_photo"])
+  ]),
+  q("葵に『これ似合いそう』と言われた。",[
+   c("試してみる",{adventure:3,appearance_interest:2,growth_face:1,growth_body_balance:1},["p05_tried_aoi_recommendation"],{aoi:[3,2,3,2]}),
+   c("葵にも一つ選び返す",{initiative:2,emotional_openness:2},["p05_chose_item_for_aoi"],{aoi:[3,3,2,2]}),
+   c("どうして似合うと思ったのか聞く",{caution:2,self_presentation:2},["p05_asked_why_item_suited"],{aoi:[1,2,1,1]}),
+   c("ほかの店も見てから決める",{caution:3,initiative:1},[])
+  ]),
+  q("帰り際、写真を撮る？",[
+   c("近くの人に頼む",{sociability:2},["p05_photographed_with_aoi"],{aoi:[3,1,2,2]}),
+   c("スマホを置ける場所を探す",{hobby_photo:3,initiative:2},["p05_photographed_with_aoi"]),
+   c("葵に任せる",{conformity:2},["p05_photographed_with_aoi"]),
+   c("今日は撮らなくていい",{self_presentation:-1},[])
+  ])
+ ]},
+ {no:6,title:"相談した夜",age:"中学2年",memory:"外出のあと、誰かに話した夜。ここから新しい記憶は『作られたもの』ではなく、本人にとって本当に生きた記憶として定着していく。",choices:[
+  q("今日のことをどう話す？",[
+   c("楽しかった、とだけ言う",{emotional_openness:3,memory_accept:2},["p06_told_it_was_fun"]),
+   c("順番に詳しく話す",{memory_accept:5,emotional_openness:3},["p06_explained_day_in_detail"]),
+   c("葵がどう思っていたか聞く",{caution:2},["p06_asked_about_aoi_feelings"]),
+   c("大したことじゃないとごまかす",{emotional_openness:-2},["p06_downplayed_event"]),
+   c("写真を見せながら話す",{hobby_photo:2,memory_accept:4},["p06_showed_photo"],null,()=>S.hobby_photo>=35)
+  ]),
+  q("『それで、どうしたいの？』",[
+   c("また普通に遊べればいい",{caution:1},[]),
+   c("もう少し二人で話してみたい",{initiative:3,emotional_openness:3},["p06_wants_more_time_with_aoi"],{aoi:[2,2,2,4]}),
+   c("まだよく分からない",{caution:3},["p06_unsure_about_feelings"]),
+   c("向こうがどう思ってるか次第",{conformity:2},["p06_follow_aoi_response"]),
+   c("今度は自分から誘ってみたい",{initiative:5},["p06_messaged_aoi_afterward"],{aoi:[3,2,3,4]},()=>S.initiative>=45)
+  ]),
+  q("別れ際。",[
+   c("相談に乗ってくれた礼を言う",{emotional_openness:3},["p06_consult_habit_created"]),
+   c("誰にも言うなと念を押す",{caution:2},["p06_consult_habit_created"]),
+   c("また何かあったら話す",{emotional_openness:4},["p06_consult_habit_created"]),
+   c("いつも通りの話をして別れる",{sociability:1},[]),
+   c("今度は相手の相談も聞くと言う",{emotional_openness:3,sociability:2},["p06_mutual_consult_relationship"],null,()=>S.emotional_openness>=40)
+  ])
+ ]},
+ {no:7,title:"修学旅行",age:"中学3年",memory:"昼の班行動、夜の居場所、集合写真。ここから主人公は改変後の写真を『こうだった』と当然のように受け入れる。",choices:[
+  q("班で予定外のトラブル。",[
+   c("一緒に待つ",{emotional_openness:2},["p07_stayed_with_troubled_person"]),
+   c("先生か大人を呼びに行く",{initiative:2,caution:3},["p07_got_help"]),
+   c("残る人と進む人を分ける",{initiative:3},["p07_split_group"]),
+   c("本人にどうしたいか聞く",{emotional_openness:2,caution:1},["p07_asked_person_preference"]),
+   c("荷物を一部持つ",{sociability:1},["p07_carried_bag"])
+  ]),
+  q("夜、どこへ行く？",[
+   c("トランプに混ざる",{sociability:3},["p07_night_cards"]),
+   c("相談があるという相手のところへ",{emotional_openness:3},["p07_night_consult"]),
+   c("自販機へ付き合う",{sociability:2},["p07_night_vending"]),
+   c("写真を撮っているところへ",{hobby_photo:4},["p07_night_photo"]),
+   c("いくつか順番に顔を出す",{sociability:4,adventure:2},["p07_moved_between_groups"],null,()=>S.sociability>=45)
+  ]),
+  q("夜の集合写真。",[
+   c("今いた場所から入る",{conformity:1},[]),
+   c("空いているところへ詰める",{initiative:1},[]),
+   c("まだ来ていない人を呼ぶ",{sociability:2},["p07_called_missing_person"]),
+   c("カメラ位置を直す",{hobby_photo:3,self_presentation:2},["p07_adjusted_camera"])
+  ])
+ ]},
+ {no:8,title:"卒業の日",age:"中学3年・卒業",memory:"中学卒業。名前、呼ばれ方、卒業後も残る関係。身体と名前は必ずしも同じ方向へ進まない。",choices:[
+  q("式のあと、まずどうする？",[
+   c("小学校からの友人のところへ",{sociability:2},["p08_spent_time_with_old_friends"]),
+   c("クラスのみんなと残る",{sociability:3},["p08_stayed_with_class"]),
+   c("呼ばれた相手のところへ",{conformity:2},["p08_followed_person_calling"]),
+   c("先生へ挨拶する",{caution:2,initiative:2},["p08_greeted_teacher"])
+  ]),
+  q("寄せ書きや写真をどう残す？",[
+   c("できるだけ多くの人に書いてもらう",{sociability:4,social_yuka:2},["p08_many_yearbook_messages"]),
+   c("仲のいい人だけでいい",{emotional_openness:2},["p08_only_close_yearbook_messages"]),
+   c("自分から他の人にも書く",{initiative:3},["p08_wrote_to_others"]),
+   c("寄せ書きより写真を残したい",{hobby_photo:4},["p08_prioritized_photos"])
+  ]),
+  q("学校を出る前に。",[
+   c("一番長く付き合った友人と話す",{emotional_openness:2},["p08_last_talk_person"]),
+   c("これから会いにくい人へ声をかける",{initiative:3},[]),
+   c("葵のところへ行く",{emotional_openness:3},["p08_aoi_final_talk"],{aoi:[3,3,2,4]},()=>rel("aoi").closeness>=20),
+   c("みんなを集めて写真を撮る",{hobby_photo:3,initiative:3},["p08_called_group_for_final_photo"])
+  ])
+ ]},
+ {no:9,title:"文化祭",age:"高校1年",memory:"高校では『どう見られるか』だけでなく、『自分がどう見せたいか』が少しずつ生まれる。",choices:[
+  q("前日の準備。",[
+   c("人が足りない場所へ行く",{sociability:2,conformity:2},["p09_helped_understaffed_area"]),
+   c("頼まれた作業を引き受ける",{conformity:3},["p09_took_requested_task"]),
+   c("得意な作業を探す",{initiative:3},["p09_chose_strength_based_task"]),
+   c("全体を見て詰まりを整理する",{initiative:5,caution:2},["p09_coordinated_whole_class"]),
+   c("写真スペースを手伝う",{hobby_photo:4,hobby_creative:2},["p09_photo_area"],null,()=>S.hobby_photo>=35),
+   c("衣装や小物を整理する",{hobby_fashion:3,appearance_interest:3},["p09_costume_props"],null,()=>S.appearance_interest>=35)
+  ]),
+  q("本番、急な代役を頼まれた。",[
+   c("必要ならやる",{conformity:2,initiative:2},["p09_substitute_role","p09_stage_experience"]),
+   c("一回確認してから決める",{caution:3,self_presentation:2},["p09_checked_role_first"]),
+   c("他にできる人を探す",{initiative:2,caution:2},["p09_found_alternative"]),
+   c("代わりに別の仕事をする",{initiative:3},["p09_took_different_job","p09_backstage_experience"]),
+   c("面白そうだからやる",{adventure:5,hobby_creative:2},["p09_tried_role_for_fun","p09_stage_experience"],null,()=>S.adventure>=40),
+   c("写真で見てから決める",{hobby_photo:2,self_presentation:4},["p09_checked_appearance_in_photo"],null,()=>S.self_presentation>=35)
+  ]),
+  q("文化祭終了後の集合写真。",[
+   c("呼ばれた場所へ入る",{conformity:1},[]),
+   c("片付けている人を呼ぶ",{sociability:2},[]),
+   c("近くの友人と話しながら入る",{sociability:2},[]),
+   c("撮影準備を手伝う",{hobby_photo:3},["p09_photo_staff"]),
+   c("黒板が入るよう位置を調整する",{hobby_photo:3,self_presentation:2},["p09_self_adjusted_costume"],null,()=>S.hobby_photo>=45)
+  ])
+ ]},
+ {no:10,title:"休日の買い物",age:"高校2年",memory:"友人に選ばれるだけではなく、自分の好みを持ち始める。身体と趣味は別々に育つ。",choices:[
+  q("予定外の寄り道。",[
+   c("急いでいないので付き合う",{conformity:2,sociability:1},["p10_followed_friend_shop"]),
+   c("自分も見たい店を言う",{initiative:4},["p10_suggested_own_shop"]),
+   c("一度別れて後で集合する",{initiative:3},["p10_split_group"]),
+   c("時間を見て近い店から回る",{caution:3,initiative:2},[]),
+   c("写真を撮れそうな場所も寄る",{hobby_photo:3},[],null,()=>S.hobby_photo>=45)
+  ]),
+  q("商品を勧められた。",[
+   c("一度試してみる",{adventure:2,appearance_interest:2,growth_face:1,growth_body_balance:1},["p10_tried_item"]),
+   c("自分なら別の方を選ぶ",{initiative:4,hobby_fashion:2},["p10_chose_own_item"]),
+   c("相手にも一つ選び返す",{sociability:2,emotional_openness:2},["p10_chose_item_for_friend"]),
+   c("買うかは後で決める",{caution:3},[]),
+   c("写真を撮って比べる",{hobby_photo:2,self_presentation:4},["p10_compared_with_photo"],null,()=>S.hobby_photo>=40||S.self_presentation>=40)
+  ]),
+  q("帰る前の写真。",[
+   c("全員で撮る",{sociability:2},[]),
+   c("買ったものが分かるように撮る",{self_presentation:3},["p10_bought_item"]),
+   c("話しているところを撮ってもらう",{emotional_openness:2},[]),
+   c("自分は撮る側に回る",{hobby_photo:3},["p10_photo_role"])
+  ])
+ ]},
+ {no:11,title:"関係が変わった日",age:"高校2年冬〜3年春",memory:"卒業後も関係を続けたいのか。将来の話をすることで、友人関係そのものが変わっていく。",choices:[
+  q("放課後、どうする？",[
+   c("最初に声をかけた相手と帰る",{conformity:2},["p11_spent_time_with"]),
+   c("進路の話をしたそうな相手と残る",{emotional_openness:2},["p11_discussed_future"]),
+   c("何人かで帰る",{sociability:3},[]),
+   c("今日は一人で考えて帰る",{caution:3},[]),
+   c("自分から話したい相手を呼び止める",{initiative:5},["p11_spent_time_with"],null,()=>S.initiative>=50)
+  ]),
+  q("将来について。",[
+   c("今考えている進路を話す",{initiative:3},["p11_discussed_future"]),
+   c("まだ迷っていると認める",{emotional_openness:3,caution:2},["p11_admitted_uncertainty"]),
+   c("相手の将来を聞く",{emotional_openness:2},["p11_asked_other_future"]),
+   c("卒業後も関係が続くか聞く",{emotional_openness:4},["p11_asked_relationship_future"]),
+   c("昔思っていた自分と今は違うと話す",{memory_accept:3,self_yuka:1},["p11_discussed_self_change"],null,()=>S.memory_accept>=50)
+  ]),
+  q("別れ際。",[
+   c("また学校で、と別れる",{caution:1},[]),
+   c("近いうちにまた遊ぼうと言う",{sociability:2},["p11_promised_to_meet_again"]),
+   c("卒業後も連絡すると約束する",{emotional_openness:3},["p11_promised_post_graduation_contact"]),
+   c("具体的な予定を決める",{initiative:4},["p11_specific_future_plan"]),
+   c("写真を一枚撮る",{hobby_photo:3},["p11_final_photo_person"],null,()=>S.hobby_photo>=45)
+  ])
+ ]},
+ {no:12,title:"卒業式",age:"高校3年・卒業",memory:"高校までに出来上がった名前、身体、趣味、関係性を『成人直前の主人公像』として保存する。",choices:[
+  q("卒業式後、まずどこへ？",[
+   c("昔からの仲間のところへ",{sociability:2},["p12_first_group_old"]),
+   c("高校で仲良くなった仲間へ",{sociability:2},["p12_first_group_high"]),
+   c("約束していた相手へ",{emotional_openness:2},["p12_first_group_promised"]),
+   c("まだ挨拶していない人を回る",{sociability:4},["p12_first_group_rounds"]),
+   c("一人で校内を歩く",{caution:2},["p12_first_group_solo"],null,()=>S.caution>=45)
+  ]),
+  q("卒業アルバム最後のページ。",[
+   c("色々な人に書いてもらう",{sociability:3,social_yuka:2},["p12_album_many"]),
+   c("仲のいい人に長く書いてもらう",{emotional_openness:2},["p12_album_deep"]),
+   c("写真を貼るスペースにする",{hobby_photo:4},["p12_album_photo"]),
+   c("自分で今の気持ちを書く",{initiative:3,memory_accept:2},["p12_album_self"])
+  ]),
+  q("校門前、最後の一枚。",[
+   c("近くにいる人と入る",{conformity:1},[]),
+   c("一緒に撮りたい人を呼ぶ",{initiative:3},["p12_called_person_for_photo"]),
+   c("全員入る位置を探す",{hobby_photo:2,caution:2},[]),
+   c("誰かのカメラを代わりに持つ",{hobby_photo:3},[])
+  ])
+ ]},
+ {no:13,title:"友人の誕生日会",age:"大学",memory:"大学の友人たちは高校以前の主人公を知らない。今の名前、姿、話し方こそが『神谷』そのものになる。",choices:[
+  q("誕生日会の準備。",[
+   c("空いている作業を引き受ける",{conformity:2,sociability:1},["p13_party_role"]),
+   c("得意な作業を選ぶ",{initiative:3},["p13_party_role"]),
+   c("誰かと一緒にやる",{sociability:3},["p13_party_role"]),
+   c("全体を見て必要な所へ回る",{initiative:4,caution:2},["p13_party_role"]),
+   c("写真・動画係をやる",{hobby_photo:4},["p13_party_role"],null,()=>S.hobby_photo>=45)
+  ]),
+  q("昔の写真を見せてと言われた。",[
+   c("高校卒業式を見せる",{memory_accept:2},["p13_old_photo_shown","p13_old_photo_high"]),
+   c("文化祭を見せる",{memory_accept:2},["p13_old_photo_shown","p13_old_photo_festival"]),
+   c("中学の頃を見せる",{memory_accept:2,old_world_sense:2},["p13_old_photo_shown","p13_old_photo_middle"]),
+   c("適当に何枚か見せる",{memory_accept:3},["p13_old_photo_shown"]),
+   c("写真は見せず話だけする",{caution:2},[],null,()=>S.self_presentation<45)
+  ]),
+  q("『昔から今みたいだったの？』",[
+   c("そんなに変わってないと思う",{memory_accept:4},["p13_self_change_answer"]),
+   c("高校くらいで結構変わった",{memory_accept:3},["p13_self_change_answer"]),
+   c("昔はもっと違った気がする",{old_world_sense:8,memory_accept:-1},["p13_sensed_old_world"]),
+   c("人なんて普通に変わる",{identity_stability:4,memory_accept:3},["p13_accepts_change_as_growth"]),
+   c("昔の自分も今の自分も同じ自分",{identity_stability:7,memory_accept:5},["p13_accepts_change_as_growth"],null,()=>S.memory_accept>=55)
+  ])
+ ]},
+ {no:14,title:"成人式",age:"20歳",memory:"過去を知る旧友たちまで、改変後の主人公を『昔からそうだった』と記憶している。元の人生を覚えている存在がほとんど消える。",choices:[
+  q("昔話の輪で。",[
+   c("自分から昔の話を出す",{memory_accept:4},["p14_old_story_mode"]),
+   c("みんなの話を聞いて笑う",{memory_accept:3},["p14_old_story_mode"]),
+   c("今だから言えることを話す",{emotional_openness:4},["p14_old_story_mode"]),
+   c("久しぶりの人にも話を振る",{sociability:4},["p14_reconnected_people"]),
+   c("覚えている内容が少し違うと言う",{old_world_sense:10,memory_accept:-2},["p14_old_world_flash"],null,()=>S.old_world_sense>=18)
+  ]),
+  q("昔の自分を見てどう思う？",[
+   c("結構変わったな",{memory_accept:2},["p14_photo_self_comment"]),
+   c("思ったより変わってない",{identity_stability:3},["p14_photo_self_comment"]),
+   c("この頃の自分、懐かしい",{memory_accept:4},["p14_photo_self_comment"]),
+   c("今の方が自分らしい",{self_yuka:2,identity_stability:5},["p14_photo_self_comment"]),
+   c("全部ちゃんと自分だと思う",{identity_stability:8,memory_accept:5},["p14_photo_self_comment"],null,()=>S.memory_accept>=60),
+   c("一枚だけ変に感じる",{old_world_sense:8},["p14_old_world_flash"],null,()=>S.old_world_sense>=25)
+  ]),
+  q("成人式のあと。",[
+   c("昔からの仲間とそのまま行く",{sociability:2},["p14_afterparty_choice"]),
+   c("久しぶりの人が多い集まりへ",{sociability:4},["p14_reconnected_people"]),
+   c("特定の相手と少し話す",{emotional_openness:3},["p14_specific_person"]),
+   c("今日はここで帰る",{caution:2},["p14_afterparty_choice"]),
+   c("全員で写真を撮ってから決める",{hobby_photo:3},["p14_afterparty_choice"],null,()=>S.hobby_photo>=45)
+  ])
+ ]},
+ {no:15,title:"同窓会の集合写真",age:"現在・24歳",memory:"最後だけは過去ではない。これまでに作られた人生を持ったまま、現在の同窓会へ向かう。",final:true,choices:[
+  q("アルバムを見ながら。",[
+   c("一緒に昔話をする",{memory_accept:2},[]),
+   c("みんなの話を聞く",{memory_accept:1},[]),
+   c("一番印象に残る写真を開く",{identity_stability:2},[]),
+   c("今と昔を比べて笑う",{identity_stability:2},[]),
+   c("昔の自分について詳しく聞く",{old_world_sense:3},[],null,()=>S.old_world_sense>=30),
+   c("『神谷悠斗』について尋ねる",{old_world_sense:8},["asked_about_yuto"],null,()=>S.old_world_sense>=55)
+  ]),
+  q("『今が一番楽しい？』",[
+   c("まあ、楽しい",{current_life_acceptance:4},[]),
+   c("昔も今もそれぞれ",{old_life_attachment:3,current_life_acceptance:3},[]),
+   c("今の方が好き",{current_life_acceptance:6,identity_stability:3},[]),
+   c("よく分からない",{old_world_sense:2},[]),
+   c("昔の自分も含めて今の自分",{identity_stability:7,current_life_acceptance:4,old_life_attachment:4},[],null,()=>S.identity_stability>=45),
+   c("何か一つ欠けている気がする",{old_world_sense:7},[],null,()=>S.old_world_sense>=45)
+  ]),
+  q("最後の集合写真。どこに立つ？",[
+   c("いつもの人たちのところへ",{current_life_acceptance:2},[]),
+   c("一番長く関係が続いた人の隣へ",{identity_stability:2},[]),
+   c("葵の隣へ",{current_life_acceptance:2},[],{aoi:[2,2,2,3]},()=>rel("aoi").closeness>=35),
+   c("中央が空いているので入る",{initiative:2},[]),
+   c("全員が入っているか確認する",{hobby_photo:2},[]),
+   c("少し離れて全員を見てから入る",{old_world_sense:3},[],null,()=>S.old_world_sense>=30)
+  ])
+ ]}
+];
+
+function q(prompt,choices){return {prompt,choices}}
+function c(text,delta={},flags=[],rels=null,cond=null){return {text,delta,flags,rels,cond}}
+
+const people=["ren","misaki","naoki","nana","yosuke","reo","aoi","saya","takumi","yuki","chinatsu","maho","kaito","tomoya","rina","yui"];
+const personNames={ren:"蓮",misaki:"美咲",naoki:"直樹",nana:"奈々",yosuke:"陽介",reo:"玲央",aoi:"葵",saya:"沙耶",takumi:"拓海",yuki:"優希",chinatsu:"千夏",maho:"真帆",kaito:"海斗",tomoya:"智也",rina:"里奈",yui:"結衣"};
+
+function baseRelation(){return {closeness:10,trust:8,habit:8,awareness:0,future_commitment:0}}
+function newState(){
+ let relations={}; people.forEach(p=>relations[p]=baseRelation());
+ return {
+  chapter:0,scene:0,flags:{},album:[],
+  body_feminization:15,self_yuka:8,memory_accept:10,social_yuka:5,
+  appearance_interest:15,self_presentation:15,initiative:35,conformity:35,
+  emotional_openness:30,sociability:35,adventure:30,caution:35,
+  hobby_photo:10,hobby_sports:25,hobby_games:30,hobby_music:20,hobby_fashion:10,
+  hobby_collecting:15,hobby_social_media:10,hobby_travel:15,hobby_reading:20,
+  hobby_creative:10,hobby_cooking:10,hobby_grooming:10,
+  growth_height:40,growth_frame:35,growth_face:20,growth_voice:25,growth_hair_skin:20,growth_body_balance:20,
+  old_world_sense:0,identity_stability:15,current_life_acceptance:20,old_life_attachment:10,
+  relations, currentName:"神谷 悠斗", pronoun:"俺", ending:null
+ }
+}
+let S = load() || newState();
+
+function clamp(v){return Math.max(0,Math.min(100,v))}
+function rel(p){return S.relations[p] || (S.relations[p]=baseRelation())}
+
+function save(){localStorage.setItem("album_tsf_save_v1",JSON.stringify(S))}
+function load(){try{return JSON.parse(localStorage.getItem("album_tsf_save_v1")||"null")}catch(e){return null}}
+function reset(){localStorage.removeItem("album_tsf_save_v1");S=newState();renderHome()}
+
+function applyChoice(choice){
+ Object.entries(choice.delta||{}).forEach(([k,v])=>{
+   if(typeof S[k]!=="number") S[k]=0;
+   S[k]=clamp(S[k]+v);
+ });
+ (choice.flags||[]).forEach(f=>S.flags[f]=true);
+ if(choice.rels){
+   Object.entries(choice.rels).forEach(([p,a])=>{
+     let r=rel(p);
+     r.closeness=clamp(r.closeness+(a[0]||0));
+     r.trust=clamp(r.trust+(a[1]||0));
+     r.habit=clamp(r.habit+(a[2]||0));
+     r.awareness=clamp(r.awareness+(a[3]||0));
+   });
+ }
+ cascade();
+}
+
+function cascade(){
+ // Complex, non-obvious growth: effects arise from accumulated life, not one choice.
+ let social = (S.sociability+S.emotional_openness+S.conformity)/3;
+ let presentation = (S.appearance_interest+S.self_presentation+S.hobby_fashion+S.hobby_grooming)/4;
+ let memory = S.memory_accept;
+
+ // body drift only when several conditions combine
+ let drift = 0;
+ if(S.flags.p03_considered_growing_hair) drift += 1.2;
+ if(S.flags.p05_tried_aoi_recommendation && S.appearance_interest>35) drift += 1.2;
+ if(S.flags.p09_stage_experience && S.adventure>40) drift += .8;
+ if(S.flags.p10_tried_item && S.self_presentation>40) drift += .8;
+ if(memory>45 && presentation>35) drift += .9;
+ if(social>45 && S.memory_accept>55) drift += .6;
+ S.body_feminization=clamp(S.body_feminization+drift);
+
+ // growth dimensions diverge
+ if(drift>0){
+  S.growth_face=clamp(S.growth_face+drift*0.9);
+  S.growth_hair_skin=clamp(S.growth_hair_skin+drift*0.7);
+  S.growth_body_balance=clamp(S.growth_body_balance+drift*0.8);
+  if(S.caution>S.adventure) S.growth_frame=clamp(S.growth_frame+drift*0.25);
+  else S.growth_voice=clamp(S.growth_voice+drift*0.15);
+ }
+
+ // self/social identity are related but not identical
+ let socialPressure=(S.social_yuka + presentation + S.body_feminization)/3;
+ if(S.memory_accept>45 && socialPressure>40) S.self_yuka=clamp(S.self_yuka+0.8);
+ if(S.body_feminization>45 && S.memory_accept>50) S.social_yuka=clamp(S.social_yuka+1.1);
+ if(S.flags.p08_many_yearbook_messages) S.social_yuka=clamp(S.social_yuka+.4);
+
+ updateIdentity();
+}
+
+function updateIdentity(){
+ const ns = S.social_yuka*.30 + S.self_yuka*.25 + S.memory_accept*.20 + S.body_feminization*.15 + (S.flags.p08_many_yearbook_messages?10:0)*.10;
+ if(ns<30) S.currentName="神谷 悠斗";
+ else if(ns<50) S.currentName="神谷 ゆう";
+ else if(ns<70) S.currentName = S.self_yuka>=50 ? "神谷 悠香" : "神谷 悠斗";
+ else S.currentName="神谷 悠香";
+
+ // pronoun is independent from body/name
+ if(S.self_yuka>72 && S.emotional_openness>45) S.pronoun="私";
+ else if(S.caution>62 && S.self_yuka>35) S.pronoun="自分";
+ else if(S.sociability<25 && S.caution>55) S.pronoun="僕";
+ else S.pronoun="俺";
+}
+
+function bodyText(){
+ const b=S.body_feminization;
+ let face=S.growth_face, voice=S.growth_voice, frame=S.growth_frame;
+ let base = b<30?"元の悠斗に近い成長":b<50?"細身で中性的な印象":b<70?"顔立ちや体格に女性寄りの要素が増えた姿":"周囲からは女性として見られやすい姿";
+ return `${base}。顔 ${Math.round(face)} / 声 ${Math.round(voice)} / 骨格 ${Math.round(frame)}。`;
+}
+function styleText(){
+ if(S.appearance_interest<30) return "実用性優先で、服にはあまりこだわらない";
+ if(S.appearance_interest<60) return "好き嫌いが少しずつはっきりしている";
+ return "自分なりの服・髪・小物の選び方が定着している";
+}
+function topHobbies(){
+ const arr=[
+  ["写真",S.hobby_photo],["スポーツ",S.hobby_sports],["ゲーム",S.hobby_games],["音楽",S.hobby_music],
+  ["ファッション",S.hobby_fashion],["収集",S.hobby_collecting],["読書",S.hobby_reading],["創作",S.hobby_creative],["料理",S.hobby_cooking]
+ ];
+ return arr.sort((a,b)=>b[1]-a[1]).slice(0,3).map(x=>x[0]);
+}
+function closestPeople(){
+ return Object.entries(S.relations).sort((a,b)=>{
+  const av=a[1].closeness+a[1].trust+a[1].habit+a[1].future_commitment;
+  const bv=b[1].closeness+b[1].trust+b[1].habit+b[1].future_commitment;
+  return bv-av
+ }).slice(0,3).map(([k])=>personNames[k]);
+}
+function chapterCaption(ch){
+ const names=closestPeople();
+ const hobbies=topHobbies();
+ const b=S.body_feminization;
+ let extra="";
+ if(ch.no<=2) extra=`${names[0]||"友人"}たちとの距離が少し変わった。`;
+ else if(ch.no<=4) extra=`${hobbies[0]}や人間関係の癖が、この頃から形になり始めた。`;
+ else if(ch.no<=7) extra=`成長の仕方まで別の履歴を持ち始める。本人にはすでに自然な記憶だ。`;
+ else if(ch.no<=10) extra=`名前は「${S.currentName.replace("神谷 ","")}」。外見と趣味は必ずしも同じ方向へ進んでいない。`;
+ else if(ch.no<=12) extra=`高校までの自分像が固まり、${hobbies.join("・")}が生活の一部になった。`;
+ else extra=`現在の自分へつながる記憶。${names.join("・")}との関係が残っている。`;
+ return extra;
+}
+
+function photoTags(ch){
+ let tags=[S.currentName, S.pronoun, topHobbies()[0]];
+ if(S.body_feminization>=50) tags.push("外見変化あり");
+ if(S.old_world_sense>=30) tags.push("旧記憶の残滓");
+ return tags.slice(0,4);
+}
+
+function renderHome(){
+ const has=S.chapter>0||S.album.length>0;
+ document.getElementById("app").innerHTML=`
+ <div class="topbar"><div class="title">卒業アルバムに、俺がいない。</div><div class="small">prototype v1</div></div>
+ <div class="card hero">
+   <h1>卒業アルバムに、俺がいない。</h1>
+   <p>友人から送られてきた昔の写真。触れると、その写真が撮られる直前の記憶へ入る。</p>
+   <p>選ぶのは性別ではない。誰と過ごすか、何を大事にするか、何を好きになるか。その積み重ねが、写真と人生そのものを書き換えていく。</p>
+   <div class="actions">
+    ${has?`<button class="primary" onclick="continueGame()">つづきから</button>`:""}
+    <button class="${has?"ghost":"primary"}" onclick="startNew()">最初から</button>
+    <button onclick="openAlbum()">アルバム</button>
+    ${has?`<button class="ghost" onclick="openStats()">内部状態を見る（開発用）</button>`:""}
+   </div>
+   <div class="footer-note">※ 進行状況はこのブラウザ内に自動保存されます。</div>
+ </div>`;
+}
+
+function startNew(){
+ S=newState(); save(); startChapter(0);
+}
+function continueGame(){
+ if(S.ending) return renderEnding();
+ startChapter(Math.min(S.chapter,14), S.scene||0);
+}
+function startChapter(index,scene=0){
+ S.chapter=index; S.scene=scene; save();
+ const ch=CHAPTERS[index];
+ if(scene===0) return renderChapterIntro(ch);
+ renderScene(ch,scene-1);
+}
+function renderChapterIntro(ch){
+ updateIdentity();
+ document.getElementById("app").innerHTML=`
+ <div class="topbar">
+   <div class="title">写真 No.${String(ch.no).padStart(2,"0")}</div>
+   <div class="nav"><button onclick="openAlbum()">アルバム</button><button onclick="renderHome()">メニュー</button></div>
+ </div>
+ <div class="card">
+   <div class="small">${ch.age}</div>
+   <h2>${ch.title}</h2>
+   <div class="photo"><div class="caption">
+     <b>${S.currentName}</b><br>
+     ${bodyText()}<br>${styleText()}
+     <div class="tagrow">${photoTags(ch).map(t=>`<span class="tag">${t}</span>`).join("")}</div>
+   </div></div>
+   <p>${ch.memory}</p>
+   ${ch.no>=7?`<p class="quote">写真を見ても、もう違和感はない。——そうだ。この時は、こうだった。</p>`:""}
+   ${ch.final?`<p class="quote">この写真だけは、まだ存在していない。</p>`:""}
+   <div class="actions"><button class="primary" onclick="nextScene()">記憶へ進む</button></div>
+ </div>`;
+}
+function nextScene(){
+ const ch=CHAPTERS[S.chapter];
+ S.scene++;
+ save();
+ if(S.scene<=ch.choices.length) renderScene(ch,S.scene-1);
+ else finishChapter(ch);
+}
+function renderScene(ch,idx){
+ const block=ch.choices[idx];
+ const available=block.choices.filter(x=>!x.cond||x.cond());
+ document.getElementById("app").innerHTML=`
+ <div class="topbar">
+  <div><div class="title">${ch.title}</div><div class="small">選択 ${idx+1} / ${ch.choices.length}</div></div>
+  <button onclick="openAlbum()">アルバム</button>
+ </div>
+ <div class="progress"><div style="width:${((idx+1)/ch.choices.length)*100}%"></div></div>
+ <div class="card">
+  <h3>${block.prompt}</h3>
+  <p class="small">選択肢が示す意味は、これまでの関係や性格によって変わります。</p>
+  <div class="actions">
+   ${available.map((x,i)=>`<button class="choice" onclick="choose(${idx},${block.choices.indexOf(x)})">${x.text}</button>`).join("")}
+  </div>
+ </div>`;
+}
+function choose(qi,ci){
+ const ch=CHAPTERS[S.chapter];
+ const choice=ch.choices[qi].choices[ci];
+ applyChoice(choice);
+ // relationship continuation across late chapters
+ if(ch.no>=11){
+  Object.values(S.relations).forEach(r=>{
+   if(S.flags.p11_promised_post_graduation_contact) r.future_commitment=clamp(r.future_commitment+1);
+  });
+ }
+ S.scene++;
+ save();
+ if(S.scene<=ch.choices.length) renderScene(ch,S.scene-1);
+ else finishChapter(ch);
+}
+function finishChapter(ch){
+ updateIdentity();
+ const entry={
+  no:ch.no,title:ch.title,name:S.currentName,pronoun:S.pronoun,
+  body:bodyText(),style:styleText(),caption:chapterCaption(ch),tags:photoTags(ch)
+ };
+ const existing=S.album.findIndex(x=>x.no===ch.no);
+ if(existing>=0) S.album[existing]=entry; else S.album.push(entry);
+ // old-world remnants begin after ch7
+ if(ch.no>=7 && (S.memory_accept>45 || ch.no>=13)) S.old_world_sense=clamp(S.old_world_sense+(ch.no>=13?3:1));
+ if(ch.no>=8) S.social_yuka=clamp(S.social_yuka + S.body_feminization/100);
+ if(ch.no>=10) S.identity_stability=clamp(S.identity_stability+2);
+ cascade();
+ save();
+
+ if(ch.final){
+   return finishGame();
+ }
+ document.getElementById("app").innerHTML=`
+ <div class="card">
+   <div class="small">CHAPTER ${ch.no} CLEAR</div>
+   <h2>写真 No.${String(ch.no).padStart(2,"0")}「${ch.title}」</h2>
+   <div class="photo"><div class="caption"><b>${S.currentName}</b><br>${entry.caption}</div></div>
+   <p>現代へ戻る。</p>
+   <p class="quote">写真は変わっている。けれど本人には、これが昔からの自分の記憶だ。</p>
+   <div class="actions">
+    <button class="primary" onclick="advanceChapter()">次の写真へ</button>
+    <button onclick="openAlbum()">アルバムを見る</button>
+   </div>
+ </div>`;
+}
+function advanceChapter(){
+ S.chapter=Math.min(S.chapter+1,14); S.scene=0; save(); startChapter(S.chapter,0);
+}
+
+function endingScores(){
+ return {
+  body:S.body_feminization,
+  self:S.self_yuka,
+  social:S.social_yuka,
+  memory:S.memory_accept,
+  stable:S.identity_stability,
+  old:S.old_world_sense,
+  oldAttach:S.old_life_attachment,
+  current:S.current_life_acceptance
+ }
+}
+function decideEnding(){
+ const x=endingScores();
+ if(x.old>=65 && S.flags.asked_about_yuto && x.memory>=55) return "TRUE";
+ if(x.old>=55 && x.memory>=60 && x.oldAttach>=25 && x.stable>=45) return "E";
+ if(x.body>=65 && x.self>=65 && x.social>=65 && x.memory>=65 && x.old<45) return "G";
+ if(x.body>=60 && x.self>=50 && x.social>=60 && x.old>=35 && x.stable>=45) return "F";
+ if(x.body>=60 && x.self<45) return "D";
+ if(x.body<55 && x.social>=50 && x.self<45) return "C";
+ if(x.self<35 && x.social<40 && x.body<40 && (S.hobby_photo+S.hobby_fashion+S.sociability)>90) return "B";
+ return "A";
+}
+const ENDINGS={
+ A:{title:"神谷悠斗",text:"元の人生と同じではない。それでも、ここまで積み上げた人生は確かに神谷悠斗のものだった。"},
+ B:{title:"少し違う青春",text:"名前も自己認識も悠斗。それでも友人、趣味、写真、進路は最初とはかなり違う。別の青春を歩いた悠斗。"},
+ C:{title:"俺なのに、俺じゃない",text:"身体は元の姿を多く残す一方、名前や社会の記憶は別の人生へ寄っている。本人の中にだけ、説明できないズレが残った。"},
+ D:{title:"身体だけが先に",text:"身体は大きく変わった。それでも自己認識の核には悠斗が強く残る。矛盾した二つの感覚が、どちらも自分として共存する。"},
+ E:{title:"二つの人生",text:"元の人生も、改変された人生も、どちらも『生きた』感覚がある。片方を偽物として捨てることはできない。"},
+ F:{title:"悠香として生きる悠斗",text:"現在は悠香として自然に生きている。それでも、悠斗だった人生も自分の一部として覚えている。"},
+ G:{title:"神谷悠香",text:"写真の最初から最後まで、主人公には一本の自然な人生としてつながっている。アルバムの題名は『神谷悠香のアルバム』。"},
+ TRUE:{title:"写真の外側",text:"写真は過去を塗り替えたのではない。写真に残り得た別の人生を選び、その現在へ移動していた。元の悠斗も、悠香も、別の分岐として残っている。"}
+}
+function finishGame(){
+ S.ending=decideEnding(); save(); renderEnding();
+}
+function renderEnding(){
+ const e=ENDINGS[S.ending||decideEnding()];
+ const cp=closestPeople(), hb=topHobbies();
+ document.getElementById("app").innerHTML=`
+ <div class="card">
+  <div class="small">ENDING</div>
+  <h1 class="end-title">${e.title}</h1>
+  <p>${e.text}</p>
+  <hr>
+  <h3>${S.currentName}・24歳</h3>
+  <p>${bodyText()}</p>
+  <p>現在の一人称：<b>${S.pronoun}</b></p>
+  <p>強く残った趣味：<b>${hb.join("・")}</b></p>
+  <p>人生に残った人物：<b>${cp.join("・")}</b></p>
+  <p class="quote">15枚の写真を並べた時、そこにあるのは「性別を選んだ結果」ではなく、一人分の人生だった。</p>
+  <div class="actions">
+   <button class="primary" onclick="openAlbum()">完成したアルバムを見る</button>
+   <button onclick="openStats()">人生データを見る</button>
+   <button class="ghost" onclick="renderHome()">タイトルへ</button>
+  </div>
+ </div>`;
+}
+
+function openAlbum(){
+ const items=CHAPTERS.map(ch=>{
+   const a=S.album.find(x=>x.no===ch.no);
+   if(!a) return `<div class="album-item lock"><b>${String(ch.no).padStart(2,"0")} ${ch.title}</b><span class="small">未取得</span></div>`;
+   return `<div class="album-item"><b>${String(ch.no).padStart(2,"0")} ${ch.title}</b><div class="small">${a.name} / ${a.pronoun}</div><p class="small">${a.caption}</p></div>`;
+ }).join("");
+ document.body.insertAdjacentHTML("beforeend",`
+ <div class="modal" id="albumModal" onclick="if(event.target===this)this.remove()">
+  <div class="sheet">
+   <div class="scene-head"><div><h2>アルバム</h2><div class="small">${S.album.length}/15 枚</div></div><button onclick="document.getElementById('albumModal').remove()">閉じる</button></div>
+   <div class="album-grid">${items}</div>
+  </div>
+ </div>`);
+}
+function openStats(){
+ const keys=["body_feminization","self_yuka","social_yuka","memory_accept","appearance_interest","self_presentation","initiative","emotional_openness","sociability","old_world_sense","identity_stability"];
+ const names={
+  body_feminization:"身体変化",self_yuka:"自己認識",social_yuka:"社会認識",memory_accept:"記憶定着",
+  appearance_interest:"外見関心",self_presentation:"自己演出",initiative:"主体性",emotional_openness:"感情開示",
+  sociability:"社交性",old_world_sense:"旧世界感応",identity_stability:"自己統合"
+ };
+ document.body.insertAdjacentHTML("beforeend",`
+ <div class="modal" id="statsModal" onclick="if(event.target===this)this.remove()">
+  <div class="sheet">
+   <div class="scene-head"><div><h2>内部状態（開発用）</h2><div class="small">通常プレイでは非表示にする想定</div></div><button onclick="document.getElementById('statsModal').remove()">閉じる</button></div>
+   ${keys.map(k=>`<div class="statbar"><span>${names[k]}</span><span class="bar"><i style="width:${clamp(S[k]||0)}%"></i></span><b>${Math.round(S[k]||0)}</b></div>`).join("")}
+   <hr>
+   <p><b>現在名：</b>${S.currentName}</p>
+   <p><b>一人称：</b>${S.pronoun}</p>
+   <p><b>身体：</b>${bodyText()}</p>
+   <p><b>趣味：</b>${topHobbies().join("・")}</p>
+   <p><b>近い人物：</b>${closestPeople().join("・")}</p>
+  </div>
+ </div>`);
+}
+
+renderHome();
+
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  });
+}
+</script>
+</body>
+</html>

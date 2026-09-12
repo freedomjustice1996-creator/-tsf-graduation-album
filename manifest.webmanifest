@@ -1,0 +1,10 @@
+{
+  "name": "卒業アルバムに、俺がいない。",
+  "short_name": "卒業アルバム",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0d0f14",
+  "theme_color": "#0d0f14",
+  "lang": "ja",
+  "description": "写真と記憶を書き換えながら一人分の人生を作るブラウザゲーム"
+}
